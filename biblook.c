@@ -1742,7 +1742,7 @@ void PrintResults(char *filename)
     } else if (numresults > MAXRESULTS) {
         (void)printf("\tI can't display that many results!\n");
 #endif
-    else {
+    } else {
         if (filename) {
             ofp = fopen(filename, "a");
             if (!ofp) {
