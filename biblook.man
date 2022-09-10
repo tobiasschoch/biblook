@@ -1,0 +1,101 @@
+.if t .ds Bi B\s-2IB\s+2T\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X
+.if n .ds Bi BibTeX
+.if t .ds Te T\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X
+.if n .ds Te TeX
+.TH BIBLOOK 1 "31 March 1998" "Version 2.9"
+.SH NAME
+biblook \- lookup entries in a bibliography file
+.SH SYNOPSIS
+.B "biblook \fIbasename\fP [\fIsavefile\fP]
+.SH DESCRIPTION
+.I biblook
+permits rapid lookup in a \*(Bi\& bibliography database, using a
+compact binary index file prepared by \fIbibindex\fP(1).
+.PP
+At the prompt, the user can enter any of the following commands:
+.PP
+.TP
+.B ? or h[elp]
+Display a brief help message.
+.TP
+.B "f[ind] [not] <field> <words>"
+Find the entries containing the given words in any field
+with a prefix matching the <field> argument.  For example,
+`a' matches both `author' and `address', and `au' matches
+`author' only.  If the <field> argument is `-' (or any
+string with no letters or numbers), match any field.
+.IP
+If `not' appears before the <field>, the sense of the search
+is reversed.  The symbols `~' and `!' can be used in place
+of `not'.
+.IP
+Each word is a contiguous sequence of letters and digits.
+Case is ignored; accents should be omitted; apostrophes are
+not required.  Single characters and a few common words are
+also ignored.  There is basic support for pattern matching
+using the characters ? and *, which match respectively a
+single character and a multi-character string, including
+the null string.  Thus, `algorithm??' matches `algorithmic',
+`algorithmes', and `Algorithmen'; and `*oint*' matches `point',
+`points', `pointer', `endpoint', `disjoint', etc.  However at
+present patterns beginning with ? cannot be used, as the parser
+mistakes them for a help request.
+.PP
+.TP
+.BR "and [not] <field> <words>"
+.TP
+.BR "or [not] <field> <words>"
+Intersect (resp. union) the results of the given search
+with the previous search.  Several of these commands may be
+combined on a single line.  Commands are handled in the order
+in which they appear; there is no precedence.  Unlike other
+commands, and like `not', these must be spelled out
+completely.  `&' can be used in place of `and', and `|' can
+be used in place of `or'.
+.PP
+.TP
+.B "d[isplay]"
+Display the results of the previous search.
+.PP
+.TP
+.B "s[ave] [<filename>]"
+Save the results of the previous results into the specified
+file.  If <filename> is omitted, the previous save file is
+used.  If no save file has ever been specified, results are
+saved in the file specified on the command line.  If no such
+file is specified, `save.bib' is used.  If the save file
+exists, results are appended to it.
+.PP
+.TP
+.B "w[hatis] <abbrev>"
+Display the definition of the abbreviation <abbrev>.
+.PP
+.TP
+.B "q[uit]/EOF"
+Quit.
+.PP
+Several commands can be combined on a single line by separating
+them with semicolons.  For example, the following command displays
+all STOC papers cowritten by Erdo"s without `Voronoi diagrams' in
+the title:
+.PP
+.nf
+f b stoc* | b symp* theory comp* & au erdos & ~t voronoi diagrams ; d
+.fi
+.PP
+.SH ENVIRONMENT
+.TP
+.B BIBLOOKPATH
+Search path for \*(Bi\& database files named on the command line.  If
+BIBLOOKPATH is not set, biblook defaults to BIBINPUTS.  If neither
+variable is set, the files are assumed to be in the current directory.
+.SH "SEE ALSO"
+bibclean(1), bibindex(1), bibtex(1), latex(1), tex(1)
+.SH AUTHORS
+Jeff Erickson <jeffe@cs.duke.edu>, Bill Jones <jones@cs.usask.ca>,
+and Rafael Laboissiere <rafael@laboissiere.net> with significant
+contributions from Nelson Beebe, Sariel Har-Peled, and Erik Schoenfelder.
+.PP
+The most current version of biblook and bibindex is archived at the URL
+"http://www.cs.duke.edu/~jeffe/biblook.html".
+.\" ========================[End of biblook.man]========================

@@ -1,0 +1,70 @@
+%% /u/sy/beebe/tex/bibindex/2-6/README, Mon Sep 13 18:34:57 1993
+%% Edit by Nelson H. F. Beebe <beebe@plot79.math.utah.edu>
+
+This directory contains bibindex and biblook, programs for fast lookup
+in BibTeX bibliography data bases.  They were written by Jeff
+Erickson, now at the University of California, Berkeley, with
+contributions from others acknowledged in the revision histories in
+the *.c files.
+
+These programs have been successfully built with C (and C++, when
+available) compilers and tested on these systems for the 2.6 release:
+
+	DECstation 5000		ULTRIX 4.2	gcc, g++
+	HP 9000/375		BSD 4.3		cc, CC
+	HP 9000/735		HP-UX 9.0	c89, CC
+	IBM RS/6000		AIX 3.2		cc, c89, xlC
+	IBM 3090/600S-VF	AIX 2.1		cc, CC
+	MIPS RC6280		RISCos 2.1.1	cc
+	NeXT 68040		Mach 3.0	cc, cc -ObjC, gcc
+	SGI 4D/210		IRIX 4.0.5c	cc, CC
+	Stardent		OS 2.2		cc
+	Sun SPARCstation	Solaris 2.2	cc, CC, gcc, g++
+	Sun SPARCstation	SunOS 4.1.3	acc, gcc, g++
+
+The separate PROBLEMS file records problems encountered on some of
+these systems.
+
+bibindex converts a .bib file to a .bix file, which is a compact
+binary representation of the .bib file containing hash tables for fast
+lookup, as well as byte offset positions into the corresponding .bib
+file.
+
+biblook provides an interactive lookup facility using the .bix and
+.bib files.  It verifies that the file version number and bibindex
+version number match its own values, and also compares the file time
+stamps so that it can detect whether the .bix file is out-of-date with
+respect to the .bib file.  In either case, execution terminates.
+
+Support for command history has been incorporated in version
+2.10 of biblook.  See file README.Readline for details.
+
+biblook may provide a more convenient, and faster, way of searching
+.bib files than text editors or pattern search utilities like the grep
+programs, particularly since it supports boolean operations between
+pairs of patterns.
+
+Both programs are documented in UNIX man pages, and the *.txt files
+are the output of nroff+col processing of the *.man files, so that
+documentation can read even if nroff is unavailable (e.g. non-UNIX
+systems, or UNIX systems where it is an extra-cost option).
+
+The programs so far run only under UNIX.  Plans are to investigate the
+possibility of making them work on other operating systems.
+
+For very large bibliography files, it may be necessary to change the
+type Index_t in biblook.h from "unsigned short" to "unsigned int".
+The choice in version 2.4 and earlier of "unsigned short" is suitable
+for the SIGGRAPH and TeX User Group bibliography collections
+(SIGGRAPH: 6.7MB with 15,400 entries; TUG: 3.9MB with 14,600 entries).
+as of June 1993.  Using "unsigned int" increases the size of the .bix
+files by 55% (TUG) to 68% (SIGGRAPH).
+
+Author of README and *.man files:
+	Nelson H. F. Beebe
+	Center for Scientific Computing
+	Department of Mathematics
+	University of Utah
+	Salt Lake City, UT 84112
+	USA
+	Email: beebe@math.utah.edu (Internet)

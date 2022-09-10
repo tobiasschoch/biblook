@@ -1,0 +1,192 @@
+#! /bin/sh
+
+# following program partially reorganized and greedily altered by WDJ
+#   for one-shot comp geom conversion
+# this is an unviable long-term solution:  not only is the original a
+#   fairly crude program, but some of the desired rewrites require a
+#   context-free grammar, and awk offers only regular expressions
+
+#Article: 2258 of comp.text.tex
+#Path: herald.usask.ca!alberta!ubc-cs!van-bc!zaphod.mps.ohio-state.edu!wuarchive!uunet!mcsun!unido!tub!fauern!fauern!immd2.informatik.uni-erlangen.de!fritzke
+#>From: fritzke@immd2.informatik.uni-erlangen.de (B. Fritzke)
+#Newsgroups: comp.text.tex
+#Subject: BIBTEX to REFER conversion program (here it is)
+#Message-ID: <3065@medusa.informatik.uni-erlangen.de>
+#Date: 13 Aug 90 11:13:07 GMT
+#Organization: Universitaet Erlangen, CS-Dep. IMMD II
+#Lines: 139
+#Status: R
+#
+#Recently I posted a request for a program to convert bibliographic
+#references in the bibtex format to the refer format.
+#
+#Beneath a lot of 'me too!'-messages I got an answer with an
+#awk script, that could do part of the job. After some iterations
+#of improvement there now exist a pretty good version, that fits
+#at least my needs.
+#
+#Because many people seem to be interested in the program, I post it
+#to this newsgroup.
+#
+#How to make it run:
+#  1. put the stuff after the cut-line in a file called tex2refer (or t2r or so)
+#  2. Make that file executable by typing
+#       chmod u+x tex2refer
+#     on your Unix system
+#
+#Bernd Fritzke
+#
+#Bernd Fritzke ------>  e-mail: fritzke@immd2.informatik.uni-erlangen.de
+#University of Erlangen, CS IMMD II, Martensstr. 3,  8520 Erlangen (FRG)
+
+# tex2refer - converts bibtex entries to refer entries
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# This software comes on a 'as is'-basis.
+# No guarantee for the correctness is given and no 'service' is provided
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+# This program (an awk skript) converts bibliographic references from the
+# bibtex-format to the refer-format.
+# it reads from stdin and writes to stdout:
+#
+# usage: tex2refer < file.bib > file.refer
+#
+# Be aware, that some information is neccessarily lost, because
+#
+#   * several bibtex field names are mapped to the same refer filed name
+#      e.g. publisher, organization and school are all mapped to %I
+#   * refer doesn't support types for references (like @inproceedings, @article)
+#     (therefore the inverse mapping refer2tex is mostly based on heuristics)
+#
+# In this program are only the more important (I.M.H.O.) field names covered.
+# If tex2refer encounters unknown field names, it will ignore them but store their
+# names in a list, which is displayed after the conversion process.
+#
+# With this list the program can easily be extended by adding entries to the
+# associative array 'refer'
+#
+#
+# Thanks to Lee, who provided the main part of the program and added
+# some useful comments for readability
+#
+# Bernd Fritzke (fritzke@immd2.informatik.uni-erlangen.de)
+# August 1990
+#
+
+# written under new awk, probably requires it
+nawk '
+BEGIN {
+    FS = "[ \t]+"
+    refer["author"] = "%A"
+    refer["editor"] = "%E"
+    refer["edition"] = "%e"
+    refer["address"] = "%C"
+    refer["year"] = "%D"
+    refer["publisher"] = "%I"
+    refer["journal"] = "%J"
+    refer["series"] = "%S"
+    refer["keywords"] = "%K"
+    refer["month"] = "%M"
+    refer["pages"] = "%P"
+    refer["title"] = "%T"
+    refer["volume"] = "%V"
+    refer["type"] = "%R"
+    refer["number"] = "%N"
+    refer["city"] = "%C"
+    refer["booktitle"] = "%B"
+    refer["comments"] = "%O"
+    refer["institution"] = "%I"
+    refer["organization"] = "%I"
+    refer["school"] = "%I"
+    refer["label"] = "%L"
+}
+
+/^[ \t]*%/		{ next }		# skip comment lines
+/^@inproceedings/	{print getnum($0) "%X I"; next}	# %X for comp geom use
+/^@incollection/	{print getnum($0) "%X I"; next}
+/^@inbook/		{print getnum($0) "%X I"; next}
+/^@article/		{print getnum($0) "%X A"; next}
+/^@book/		{print getnum($0) "%X B"; next}
+/^@techreport/		{print getnum($0) "%X R"; next}
+/^@.*/			{print getnum($0) "%X ?"; next}	# punt
+
+# ensure that an = sign is surrounded by space:
+/\=/ { # "=" must be preceeded by `\` , also in line below
+    gsub(/[ \t]*,[ \t]*$/, "")    # deleting commas at end of line
+    gsub(/^[ \t]*,[ \t]*/, "")    # ... or at beginning
+    gsub(/\=/, " & ") # this may cause NF to be updated...
+    # Warning -- do not put single quotes in comments!  This does not
+    # work reliably in a shell script.
+}
+
+($1 in refer && $2 == "=") { # Begin of a bibtex field definition
+    gsub(/[{}]/, "")  # deleting curly brackets
+    gsub("~", "\\0")
+    sub(/^"/, "", $3)
+    sub(/"$/, "", $NF)
+    if ($1 == "pages") gsub(/--/, "-")
+    if ($1 == "title") {	# conversion works for trivial expressions only
+	gsub(/\\log/, " log")
+	gsub(/\\infty/, " inf")
+# would like s/\^\(tok\)/ sup \1 / to get trailing space, must fake in awk
+	gsub(/\^[0-9a-zA-Z]+/, " & ")
+	gsub(/ \^/, " sup ")
+# ditto
+	gsub(/_[0-9a-zA-Z]+/, " & ")
+	gsub(/ _/, " sub ")
+    }
+    if ($1 == "author") { gsub(/[A-Z]\./, "& "); gsub(/\. -/, ".-"); }
+    printf "%s", refer[$1]
+    len = 2;
+    for (i = 3; i <= NF; i++) { # Loop over the keywords ($2 is "=")
+	if ($1 == "author" && $i == "and")
+		{ printf "\n%A"; $i = ""; len = 2; }
+	else if ($1 == "keywords" && $i ~ ".*,$") {
+		sub(",", "", $i);
+		if (len >= 2) printf " "
+		printf("%s", $i "\n%K");
+	} else {
+		# if (len + 1 + length($i) > 76)
+		#	{ printf "\n" ; len = 0; }
+		if (len >= 2) printf " "
+		printf("%s", $i)
+	}
+	len += 1+length($i)
+    }
+    printf "\n" # newline on the end of the refer entry
+}
+
+(!($1 in refer) && $2 == "=") { #collect unknown keywords
+    unknown[$1] = 1
+    next
+}
+
+/[^	 ]/ {
+    if ($2 != "=") { # This is not a first line of an entry
+	# In this case, we are dealing with a continuation line.
+	gsub(/[{}]/, "")  # deleting curly braces
+	gsub(/,$/, "")    # deleting commas at end of line
+	printf "   "
+	for (i = 1; i <= NF; i++) { # Loop over all the keywords
+	    printf " %s", $i        # and print them
+	}
+	printf "\n" # newline on the end of the refer entry
+    }
+}
+
+function getnum(s) {	# extract biblio number from start of bibtex entry
+	sub("^@[a-zA-Z]*{", "", s);
+	gsub("[^0-9.]*", "", s);
+	if (s != "")
+		return "%Z " s "\n";
+	else
+		return "";
+}
+
+END {
+	for (a in unknown) {
+	    print "------- unknown keyword:    " a
+	}
+}
+' ${@+"$@"}

@@ -1,0 +1,34 @@
+%% /u/sy/beebe/tex/bibindex/2-6/PROBLEMS, Mon Sep 13 17:27:35 1993
+%% Edit by Nelson H. F. Beebe <beebe@adam.math.utah.edu>
+
+------------------------------------------------------------------------
+[13-Sep-1993]	NeXT Mach 3.0 with g++ 2.4.5
+
+PROBLEM: bibindex builds fine on this system, but biblook cannot be built
+because the C++ runtime library lacks C++ versions of fork(),
+execlp(), execl(), and unlink().  Their declarations should be
+bracketed by
+
+extern "C" {...}
+
+in /usr/include/bsd/libc.h, so that the C library equivalents can be
+used.
+
+WORKAROUND: use C (gcc or cc) or Objective C (cc -ObjC) instead.
+------------------------------------------------------------------------
+[13-Sep-1993]	HP 9000/375, BSD 4.3 UNIX, CC
+
+PROBLEM: The C++ library on this system is missing a version of
+waitpid(), so biblook cannot be built.
+
+WORKAROUND: Use C (gcc or cc) instead.
+------------------------------------------------------------------------
+[13-Sep-1993]	IBM 3090-600S/VF AIX 2.1
+
+PROBLEM: Compilation with C++ fails because the C++ runtime library
+	 lacks versions of fread(), ftell(), and waitpid(), and a
+	 declaration of fwrite().
+
+WORKAROUND: Use C (cc) instead.
+------------------------------------------------------------------------
+
