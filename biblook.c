@@ -3,6 +3,7 @@
 Copyright (C) 1992, 1993 Jeff Erickson
 Copyright (C) 1993, 1994, 1995, 1998, 2000 Bill Jones
 Copyright (C) 2000 Rafael Laboissiere
+Copyright (C) 2022 Tobias Schoch
 
 This file is part of biblook.
 
@@ -206,6 +207,11 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
            3.2. #include<sys/wait.h> only if unix defined (biblook.h)
         4. Patch from Otfried Cheong <otfried@cs.ust.hk> for EPOC
            (the operating system of Psion palmtops and combatibles) port.
+   2.11 Tobias Schoch <tobias.schoch@gmail.com> 2022/09/10
+        1. Fixed compiler warnings (gcc 7.5.0). In function hlist_free,
+           the 3rd argument in the call of memset is casted to int. Removed
+           variable len (of type Index_t) in function FindWord because
+           it is not used.
 
 \* ================================================================= */
 
@@ -404,6 +410,7 @@ void CopyrightBanner(void)
     (void)printf("\nCopyright (C) 1992, 1993 Jeff Erickson\n");
     (void)printf("Copyright (C) 1993, 1994, 1995, 1998, 2000 Bill Jones\n");
     (void)printf("Copyright (C) 2000 Rafael Laboissiere\n");
+    (void)printf("Copyright (C) 2022 Tobias Schoch\n");
     (void)printf("This is free software with ABSOLUTELY NO WARRANTY;\n");
 }
 
@@ -533,7 +540,7 @@ static void hlist_free(HList *p_list)
     list = *p_list;
     while (list != NULL) {
         tmp = list->next;
-        memset(list, sizeof(HListNode), 0); /* only the paranoids survive */
+        memset(list, sizeof(HListNode), (int)0);
         free(list);
         list = tmp;
     }
@@ -739,8 +746,8 @@ static void History_write(char *filename)
     int childpid;
 #else
     char *command, *command_fname;
-#endif
-#endif
+#endif /* unix */
+#endif /* __SYMBIAN32__ */
 
     if (filename) {
         ofp = fopen(filename, "w");
@@ -750,6 +757,7 @@ static void History_write(char *filename)
             return;
         }
     } else {
+
 #ifdef __SYMBIAN32__
         ofp = stdout;
 #else
@@ -759,7 +767,7 @@ static void History_write(char *filename)
             perror("\tCan't open temp file");
             return;
         }
-#endif
+#endif /* __SYMBIAN32__ */
     }
 
     hist_list = history_summarize();
@@ -824,7 +832,7 @@ static void History_write(char *filename)
     unlink(the_tmpfile);
     free(the_tmpfile);                  /* malloc'ed by tempnam() */
     putchar('\n');
-#endif
+#endif /* __SYMBIAN32__ */
 }
 
 /* ----------------------------------------------------------------- *\
@@ -1590,7 +1598,7 @@ static const char *const badwords[] = BADWORDS;
 void FindWord(register char *word, char prefix)
 {
     register IndexPtr words;
-    Index_t win, len;
+    Index_t win;
     int i;
     char word_suffix[300], word_prefix[300];
 
@@ -1614,7 +1622,6 @@ void FindWord(register char *word, char prefix)
     }
 
     EmptySet(oneword);
-    len = strlen(word);
 
     for (i = firstfield; i <= lastfield; i++) {
         words = fieldtable[i].words;
