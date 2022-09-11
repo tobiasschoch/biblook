@@ -1782,8 +1782,8 @@ void PrintResults(char *filename)
 
         if (filename) {
             time_t now = time(0);
-            (void)fprintf(ofp, COL_OUT "%% Retrieved by biblook %d.%d at %s"
-                COL_RESET, MAJOR_VERSION, MINOR_VERSION, ctime(&now));
+            (void)fprintf(ofp, "%% Retrieved by biblook %d.%d at %s",
+                MAJOR_VERSION, MINOR_VERSION, ctime(&now));
         }
 
         DoForSet(results, (void (*)(int, void *))PrintEntry, (void *)ofp);
