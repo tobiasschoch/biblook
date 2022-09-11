@@ -212,7 +212,7 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
            the 3rd argument in the call of memset is casted to int. Removed
            variable len (of type Index_t) in function FindWord because
            it is not used.
-
+        2. Added color to console output
 \* ================================================================= */
 
 #include "biblook.h"
@@ -239,7 +239,7 @@ static int isStrMatchPatternExt(char *Pattern, char *Str, char caseSensative)
     StrLen = strlen(Str);
 
     if (PtrnLen >= 150) {
-        printf("Pattern too long: [%s]\n", Pattern);
+        printf(COL_WARN "Pattern too long: [%s]" COL_RESET "\n", Pattern);
         exit(-1);
     }
 
@@ -291,7 +291,7 @@ static int strptrcmp(char *str, char *pattern)
 \* ----------------------------------------------------------------- */
 void die(const char *msg1, const char *msg2)
 {
-    (void)fprintf(stderr, "Error:  %s %s\n", msg1, msg2);
+    (void)fprintf(stderr, COL_ERR "Error:  %s %s" COL_RESET"\n", msg1, msg2);
     exit(EXIT_FAILURE);
 }
 
@@ -303,7 +303,7 @@ void die(const char *msg1, const char *msg2)
 void pdie(const char *msg1, const char *msg2)
 {
     char msg[256];
-    (void)sprintf(msg, "%s %s", msg1, msg2);
+    (void)sprintf(msg, COL_ERR "%s %s" COL_RESET, msg1, msg2);
     perror(msg);
     exit(EXIT_FAILURE);
 }
@@ -433,7 +433,7 @@ static void History_init(void)
     strcat(file_name, "/.biblook.history");
 
     read_history(file_name);
-    printf("\tHistory read from: %s\n", file_name);
+    printf(COL_OUT "\tHistory read from: %s" COL_RESET "\n", file_name);
 }
 
 static void History_term(void)
@@ -449,7 +449,7 @@ static void History_term(void)
     strcat(file_name, "/.biblook.history");
 
     write_history(file_name);
-    printf("\tHistory written in: %s\n", file_name);
+    printf(COL_OUT "\tHistory written in: %s" COL_RESET "\n", file_name);
 }
 
 #else
@@ -627,7 +627,7 @@ static char *History_getLine(int num)
     if (list != NULL && (num == 1))
         return list->line;
 
-    printf("Unable to find line %d in history\n", num);
+    printf(COL_WARN "Unable to find line %d in history" COL_RESET "\n", num);
 
     return empty_line;
 }
@@ -752,7 +752,7 @@ static void History_write(char *filename)
     if (filename) {
         ofp = fopen(filename, "w");
         if (!ofp) {
-            (void)printf("\tCan't open %s: ", filename);
+            (void)printf(COL_WARN "\tCan't open %s: " COL_RESET, filename);
             perror(NULL);
             return;
         }
@@ -847,7 +847,8 @@ static void History_read(char *filename, BOOL fQuiet)
     char line[256];
 
     if (!filename) {
-        (void)printf("\tMust specify history file to read!\n");
+        (void)printf(COL_WARN "\tMust specify history file to read!" COL_RESET
+            "\n");
         perror(NULL);
         return;
     }
@@ -855,7 +856,7 @@ static void History_read(char *filename, BOOL fQuiet)
     if (!ofp) {
         if (fQuiet)
             return;
-        (void)printf("\tCan't open %s: ", filename);
+        (void)printf(COL_WARN "\tCan't open %s: " COL_RESET, filename);
         perror(NULL);
         return;
     }
@@ -873,7 +874,7 @@ static void History_read(char *filename, BOOL fQuiet)
     hlist_free(&hlist);
     hlist = list;
 
-    printf("\tHistory read from: %s\n", filename);
+    printf(COL_OUT "\tHistory read from: %s" COL_RESET "\n", filename);
 }
 
 static void History_init(void)
@@ -1029,7 +1030,9 @@ void CheckStamp(VOID)
         for (i = 0; i < cachenum; i++)
             cache[i].stamp = i;         /* Changes time stamp order! */
         curstamp = cachenum;
-        (void)printf("You've been running biblook a long time, haven't you?\n");
+        (void)printf(COL_WARN
+            "You've been running biblook a long time, haven't you?" COL_RESET
+            "\n");
     }
 }
 
@@ -1078,7 +1081,7 @@ void Access(CachedList *clist, FILE *ifp)
             pdie("Error reading", bixfile);
 
         clist->list = (char *)safemalloc(clist->bytes,
-                                         "Can't allocate index list.", "");
+            "Can't allocate index list.", "");
         safefread((void *)clist->list, sizeof(char), clist->bytes, ifp);
 
         if (cachenum == CACHESIZE) {        /* if cache is full... */
@@ -1581,7 +1584,8 @@ char SetUpField(char *field)
     }
 
     if (firstfield == -1) {
-        (void)printf("\tNo searchable fields matching \"%s\".\n", field);
+        (void)printf(COL_WARN "\tNo searchable fields matching \"%s\"."
+            COL_RESET "\n", field);
         return 0;
     } else {
         return lastfield - firstfield + 1;
@@ -1604,17 +1608,19 @@ void FindWord(register char *word, char prefix)
 
     if (!prefix) {
         if (!word[0]) {
-            (void)printf("\t[ignoring empty string]\n");
+            (void)printf(COL_WARN "\t[ignoring empty string]" COL_RESET "\n");
             return;
         }
         if (!word[1]) {
-            (void)printf("\t[ignoring single letter \"%s\"]\n", word);
+            (void)printf(COL_WARN "\t[ignoring single letter \"%s\"]"
+                COL_RESET "\n", word);
             return;
         }
 #if !IGNORENONE
         for (i = 0; badwords[i]; i++) {
             if (!strcmp(badwords[i], word)) {
-                (void)printf("\t[ignoring common word \"%s\"]\n", word);
+                (void)printf(COL_WARN "\t[ignoring common word \"%s\"]"
+                    COL_RESET "\n", word);
                 return;
             }
         }
@@ -1635,7 +1641,7 @@ void FindWord(register char *word, char prefix)
 
                 Access(clist, bixfp);
                 p = (Index_t *)safemalloc(clist->length * sizeof(Index_t),
-                                          "Can't allocate entry list.", "");
+                    "Can't allocate entry list.", "");
                 UncompressRefs(p, clist->list, clist->length);
                 BuildSet(onefield, p, clist->length);
                 SetUnion(oneword, onefield, oneword);
@@ -1665,12 +1671,13 @@ void ReportResults(VOID)
 
     numresults = CountSet(results);
 
-    if (numresults == 0)
-        (void)printf("\tNo matches found.\n");
-    else if (numresults == 1)
-        (void)printf("\t1 match found.\n");
-    else
-        (void)printf("\t%d matches found.\n", numresults);
+    if (numresults == 0) {
+        (void)printf(COL_WARN "\tNo matches found." COL_RESET "\n");
+    } else if (numresults == 1) {
+        (void)printf(COL_OUT "\t1 match found." COL_RESET "\n");
+    } else {
+        (void)printf(COL_OUT "\t%d matches found." COL_RESET "\n", numresults);
+    }
 }
 
 /* ----------------------------------------------------------------- *\
@@ -1697,6 +1704,7 @@ void PrintEntry(int entry, FILE *ofp)
         putc(ch, ofp);
         ch = safegetc(bibfp);
     }
+
     while ((ch != '{') && (ch != '(')) {
         putc(ch, ofp);
         ch = safegetc(bibfp);
@@ -1744,16 +1752,17 @@ void PrintResults(char *filename)
 
     numresults = CountSet(results);
     if (numresults == 0) {
-        (void)printf("\tNothing to display!\n");
+        (void)printf(COL_WARN "\tNothing to display!" COL_RESET "\n");
 #if MAXRESULTS
     } else if (numresults > MAXRESULTS) {
-        (void)printf("\tI can't display that many results!\n");
+        (void)printf(COL_WARN "\tI can't display that many results!" COL_RESET
+            "\n");
 #endif
     } else {
         if (filename) {
             ofp = fopen(filename, "a");
             if (!ofp) {
-                (void)printf("\tCan't open %s: ", filename);
+                (void)printf(COL_ERR "\tCan't open %s: " COL_RESET, filename);
                 perror(NULL);
                 return;
             }
@@ -1772,8 +1781,8 @@ void PrintResults(char *filename)
 
         if (filename) {
             time_t now = time(0);
-            (void)fprintf(ofp, "%% Retrieved by biblook %d.%d at %s",
-                MAJOR_VERSION, MINOR_VERSION, ctime(&now));
+            (void)fprintf(ofp, COL_OUT "%% Retrieved by biblook %d.%d at %s"
+                COL_RESET, MAJOR_VERSION, MINOR_VERSION, ctime(&now));
         }
 
         DoForSet(results, (void (*)(int, void *))PrintEntry, (void *)ofp);
@@ -1783,7 +1792,8 @@ void PrintResults(char *filename)
 #endif
             fclose(ofp);
         if (filename)
-            (void)printf("\tResults saved in \"%s\"\n", filename);
+            (void)printf(COL_OUT "\tResults saved in \"%s\"" COL_RESET "\n",
+                filename);
 #ifndef __SYMBIAN32__
         else {
             pager = (char *)getenv("PAGER");
@@ -1845,9 +1855,11 @@ void DisplayAbbrev(char *theabbrev)
     Index_t the_index = FindAbbrev(theabbrev);
 
     if (the_index == INDEX_NAN) {
-        (void)printf("\tThe abbreviation \"%s\" is not defined.\n", theabbrev);
+        (void)printf(COL_WARN "\tThe abbreviation \"%s\" is not defined."
+            COL_RESET "\n", theabbrev);
     } else if (abbrevlocs[the_index] == INDEX_BUILTIN) {
-        (void)printf("\tThe abbreviation \"%s\" is builtin.\n", theabbrev);
+        (void)printf(COL_OUT "\tThe abbreviation \"%s\" is builtin."
+            COL_RESET "\n", theabbrev);
     } else {
         PrintEntry((int)abbrevlocs[the_index], stdout);
         putchar('\n');
@@ -1947,7 +1959,7 @@ Token GetToken(char *tokenstr)
     static char line[256];
 #ifdef USE_READLINE
     char *r, *s;
-    char *prompt = "biblook: ";
+    const char *prompt = "biblook: ";
 #endif
     static short pos;
     static char neednew = 1;
@@ -1979,13 +1991,13 @@ Token GetToken(char *tokenstr)
         free(r);
 #else
         do {
-            (void)printf("biblook: ");
+            (void)printf(COL_IN "biblook: " COL_RESET);
             if (!fgets(line, 254, stdin))
                 return T_Quit;
             fReadLine = TRUE;
 
             if (History_expand(line))
-                printf("biblook: %s\n", line);
+                printf(COL_IN "biblook: %s" COL_RESET "\n", line);
 
             History_add(line);
             History_clean_remark(line, NULL);
@@ -2140,7 +2152,7 @@ char StripExt(char *string)
 \* ----------------------------------------------------------------- */
 void CmdError(VOID)
 {
-    (void)printf("\t?? Syntax error ??\n");
+    (void)printf(COL_WARN "\t?? Syntax error ??" COL_RESET "\n");
 }
 
 static const char *const shorthelplines[] = {
@@ -2153,7 +2165,7 @@ static const char *const shorthelplines[] = {
         "save <file>		Save search results to <file>",
         "whatis <abbrev>		Find and display an abbreviation",
 #ifndef USE_READLINE
-        "history                    Display history",
+        "history                 Display history",
 #endif
         "quit			Quit biblook",
         "------------------------------------------------------------",
@@ -2690,7 +2702,8 @@ int main(int argc, char **argv)
     (void)printf("Type ? or h for help.\n\n");
 
     if ((argc != 2) && (argc != 3)) {
-        (void)fprintf(stderr, "Usage: biblook bib [savefile]\n");
+        (void)fprintf(stderr, COL_OUT "Usage: biblook bib [savefile]"
+            COL_RESET "\n");
         exit(EXIT_FAILURE);
     }
 

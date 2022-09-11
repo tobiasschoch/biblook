@@ -3,6 +3,7 @@
 Copyright (C) 1992, 1993 Jeff Erickson
 Copyright (C) 1993, 1994, 1995, 1998, 2000 Bill Jones
 Copyright (C) 2000 Rafael Laboissiere
+Copyright (C) 2022 Tobias Schoch
 
 This file is part of biblook.
 
@@ -294,9 +295,10 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     9. BADWORDS trimmed to a top 20ish English list.
    2.9 Bill Jones <jones@cs.usask.ca> 98/03/30
     1. Pattern matching support, from Sariel Har-Peled, in biblook.
+  2.11 Tobias Schoch <tobias.schoch@gmail.com> 2022-09-11
+    1. Added color to console output
 
 \* ================================================================= */
-
 #include "biblook.h"
 
 /* ======================= UTILITY FUNCTIONS ======================= */
@@ -312,11 +314,12 @@ static int warnings = 0;                /* How many warnings so far? */
 \* ----------------------------------------------------------------- */
 void die(const char *msg1, const char *msg2)
 {
-    (void)fprintf(stderr, "\nError:\t in BibTeX entry starting at line %ld, ",
+    (void)fprintf(stderr, COL_ERR
+        "\nError:\t in BibTeX entry starting at line %ld, " COL_RESET,
         initial_line_number);
-    (void)fprintf(stderr, "error detected at line %ld:\n",
-        line_number);
-    (void)fprintf(stderr, "\t%s %s\n", msg1, msg2);
+    (void)fprintf(stderr, COL_ERR "error detected at line %ld:" COL_RESET
+        "\n", line_number);
+    (void)fprintf(stderr, COL_ERR "\t%s %s" COL_RESET "\n", msg1, msg2);
     exit(EXIT_FAILURE);
 }
 
@@ -341,8 +344,8 @@ void diechar(const char *msg1, const char msg2)
 \* ----------------------------------------------------------------- */
 void warn(const char *msg1, const char *msg2)
 {
-    (void)fprintf(stderr, "\nWarning: %s %s (at line %ld)\n",
-        msg1, msg2, line_number);
+    (void)fprintf(stderr, COL_WARN "\nWarning: %s %s (at line %ld)" COL_RESET
+        "\n", msg1, msg2, line_number);
     warnings++;
 }
 
@@ -1008,7 +1011,8 @@ int GetNextWord(FILE *ifp, register char *word)
 
 #if DEBUG
         if ((int)(word - start_word) > (MAXSTRING - 3)) {
-            (void)printf("WARNING: word = %-.*s\n", MAXWORD, start_word);
+            (void)printf(COL_WARN "WARNING: word = %-.*s" COL_RESET "\n",
+                MAXWORD, start_word);
         }
 #endif /* DEBUG */
 
@@ -1016,7 +1020,7 @@ int GetNextWord(FILE *ifp, register char *word)
             char buf[32];
             (void)sprintf(buf, "%c (\\%03o)", (unsigned char)ch,
                 (unsigned char)ch);
-            warn("nonascii char, ignoring: ", buf);
+            warn(COL_WARN "nonascii char, ignoring: " COL_RESET, buf);
         } else if (isalpha(ch)) {   /* letters */
             if (!incmd) {           /* may be part of TeX command */
                 if (btwn) {
@@ -1090,7 +1094,8 @@ int GetNextWord(FILE *ifp, register char *word)
 
 #if DEBUG
         if ((int)(word - start_word) > (MAXSTRING - 3))
-            (void)printf("WARNING: word = %-.*s\n", MAXWORD, start_word);
+            (void)printf(COL_WARN "WARNING: word = %-.*s" COL_RESET"\n",
+                MAXWORD, start_word);
 
 #endif /* DEBUG */
 
@@ -1118,7 +1123,8 @@ int GetNextWord(FILE *ifp, register char *word)
 
 #if DEBUG
     if (strlen(start_word) > (size_t)MAXSTRING) {
-        (void)printf("ERROR: word:%d = [%s]\n", strlen(start_word), start_word);
+        (void)printf(COL_ERR "ERROR: word:%d = [%s]" COL_RESET "\n",
+            strlen(start_word), start_word);
     }
 #endif /* DEBUG */
     return nwords;
@@ -1357,7 +1363,8 @@ void MungeAbbrev(FILE *ifp, Index_t entry)
 
     if (!iskeychar(ch, 1)) {
         warnchar("Illegal character starting abbreviation:", ch);
-        (void)fprintf(stderr, "\t I'm skipping the rest of this entry.\n");
+        (void)fprintf(stderr, COL_WARN "\t I'm skipping the rest of this entry."
+            COL_RESET"\n");
         return;
     }
 
@@ -1425,7 +1432,8 @@ void MungeRealEntry(FILE *ifp, Index_t entry)
             return;						/* last key = "value" entry */
 
         if (!iskeychar(ch, 1)) {
-            warnchar("Illegal character starting field descriptor:", ch);
+            warnchar(COL_WARN "Illegal character starting field descriptor:"
+                COL_RESET, ch);
             (void)fprintf(stderr, "\t I'm skipping the rest of this entry.\n");
             return;
         }
@@ -1444,7 +1452,8 @@ void MungeRealEntry(FILE *ifp, Index_t entry)
         htable = GetHashTable(thefield);
         if (!MungeField(ifp, (void (*)(char *, void *, void *))MF_InsertEntry,
                 (void *)htable, (void *)&entry)) {
-            (void)fprintf(stderr, "\t I'm skipping the rest of this entry.\n");
+            (void)fprintf(stderr, COL_WARN
+                "\t I'm skipping the rest of this entry." COL_RESET "\n");
             return;
         }
 
@@ -1503,8 +1512,9 @@ int MungeEntry(FILE *ifp, Index_t entry)
         ch = safegetc(ifp, "looking for entry type");
 
     if (!isalpha(ch)) {
-        warnchar("Letter expected after @:", ch);
-        (void)fprintf(stderr, "\t I'm skipping the rest of this entry.\n");
+        warnchar(COL_WARN "Letter expected after @:" COL_RESET, ch);
+        (void)fprintf(stderr, COL_WARN "\t I'm skipping the rest of this entry."
+            COL_RESET "\n");
         return 0;
     }
 
@@ -1522,8 +1532,9 @@ int MungeEntry(FILE *ifp, Index_t entry)
         ch = safegetc(ifp, "looking for open brace");
 
     if ((ch != '(') && (ch != '{')) {
-        warnchar("{ or ( expected after entry type:", ch);
-        (void)fprintf(stderr, "\t I'm skipping the rest of this entry.\n");
+        warnchar(COL_WARN "{ or ( expected after entry type:" COL_RESET, ch);
+        (void)fprintf(stderr, COL_WARN "\t I'm skipping the rest of this entry."
+            COL_RESET "\n");
         return 0;
     }
 
@@ -1715,7 +1726,7 @@ void OutputTables(FILE *ofp)
 
     numwords = numrefs = 0;
 
-    (void)printf("Writing index tables...");
+    (void)printf(COL_OUT "Writing index tables..." COL_RESET);
     fflush(stdout);
 
     numfields = 0; /* recount, ignoring black holes */
@@ -1766,7 +1777,7 @@ void OutputTables(FILE *ofp)
         numwords, numrefs, (double)numrefs / (double)((numwords == 0) ? 1 :
         numwords));
     putchar('\n');
-    (void)printf("Writing abbrev table...");
+    (void)printf(COL_OUT "Writing abbrev table..." COL_RESET);
     fflush(stdout);
 
     SortTable(abbrevtable);
@@ -1800,7 +1811,7 @@ void IndexBibFile(FILE *ifp, FILE *ofp, char *filename)
     size_t offsize;
     time_t now = time(0);
 
-    (void)printf("Indexing %s.bib.", filename);
+    (void)printf(COL_OUT "Indexing %s.bib." COL_RESET, filename);
     fflush(stdout);
 
     offsize = 128;                      /* MINIMUM OFFSET LIST SIZE */
@@ -1832,12 +1843,12 @@ void IndexBibFile(FILE *ifp, FILE *ofp, char *filename)
         }
     }
 
-    (void)printf("done.\n");
+    (void)printf(COL_IN "done." COL_RESET "\n");
 
     (void)fprintf(ofp, "bibindex %d %d %d %s", FILE_VERSION, MAJOR_VERSION,
         MINOR_VERSION, ctime(&now));
 
-    (void)printf("Writing offset table...");
+    (void)printf(COL_OUT "Writing offset table..." COL_RESET);
     fflush(stdout);
     NetOrderFwrite((void *)&count, sizeof(Index_t), 1, ofp);
     NetOrderFwrite((void *)offsets, sizeof(Off_t), count, ofp);
@@ -1847,11 +1858,13 @@ void IndexBibFile(FILE *ifp, FILE *ofp, char *filename)
     OutputTables(ofp);
 
     if (warnings) {
-        (void)printf("\nWarning: %d problems were encountered.\n", warnings);
-        (void)printf("\t Biblook may give unexpected results.\n\n");
+        (void)printf(COL_WARN "\nWarning: %d problems were encountered."
+            COL_RESET "\n", warnings);
+        (void)printf(COL_WARN "\t Biblook may give unexpected results."
+            COL_RESET "\n\n");
     }
 
-    (void)printf("All done!\n");
+    (void)printf(COL_IN "All done!" COL_RESET"\n");
 }
 
 /* ----------------------------------------------------------------- *\

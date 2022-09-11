@@ -2,7 +2,7 @@
 .if n .ds Bi BibTeX
 .if t .ds Te T\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X
 .if n .ds Te TeX
-.TH BIBLOOK 1 "31 March 1998" "Version 2.9"
+.TH BIBLOOK 1 "11 September 2022" "Version 2.11"
 .SH NAME
 biblook \- lookup entries in a bibliography file
 .SH SYNOPSIS
@@ -97,5 +97,5 @@ and Rafael Laboissiere <rafael@laboissiere.net> with significant
 contributions from Nelson Beebe, Sariel Har-Peled, and Erik Schoenfelder.
 .PP
 The most current version of biblook and bibindex is archived at the URL
-"http://www.cs.duke.edu/~jeffe/biblook.html".
+"https://github.com/tobiasschoch/biblook".
 .\" ========================[End of biblook.man]========================

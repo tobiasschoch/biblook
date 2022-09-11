@@ -2,7 +2,7 @@
 .if n .ds Bi BibTeX
 .if t .ds Te T\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X
 .if n .ds Te TeX
-.TH BIBINDEX 1 "31 March 1998" "Version 2.9"
+.TH BIBINDEX 1 "11 September 2022" "Version 2.11"
 .SH NAME
 bibindex \- create a bibliography index file for \fBbiblook\fP(1)
 .SH SYNOPSIS
@@ -84,11 +84,11 @@ bibclean(1), biblook(1), bibtex(1), latex(1), tex(1)
 .SH AUTHORS
 Jeff Erickson <jeffe@cs.duke.edu> and Bill Jones <jones@cs.usask.ca>,
 with significant contributions from Nelson Beebe, Sariel Har-Peled,
-and Erik Schoenfelder
+and Erik Schoenfelder.
 .PP
 This program is in the public domain.  You may use it or modify it to
 your heart's content, at your own risk.
 .PP
 The most current version of biblook and bibindex is archived at the URL
-"http://www.cs.duke.edu/~jeffe/biblook.html".
+"https://github.com/tobiasschoch/biblook".
 .\" =======================[End of bibindex.man]========================

@@ -3,6 +3,7 @@
 Copyright (C) 1992, 1993 Jeff Erickson
 Copyright (C) 1993, 1994, 1995, 1998, 2000 Bill Jones
 Copyright (C) 2000 Rafael Laboissiere
+Copyright (C) 2022 Tobias Schoch
 
 This file is part of biblook.
 
@@ -23,6 +24,21 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 /* ======================== Standard header files ====================== */
+
+/* added by Tobias Schoch <tobias.schoch@gmail.com>, 2022-09-11 */
+#ifdef WITH_COLOR
+#define COL_WARN    "\x1B[35m"  /* warning: magenta */
+#define COL_ERR     "\x1B[31m"  /* error: red */
+#define COL_OUT     "\x1B[36m"  /* output: cyan */
+#define COL_IN      "\x1B[32m"  /* input: green */
+#define COL_RESET   "\x1B[0m"   /* reset color */
+#else
+#define COL_WARN    ""
+#define COL_ERR     ""
+#define COL_OUT     ""
+#define COL_IN      ""
+#define COL_RESET   ""
+#endif
 
 #include <stdio.h>
 #if (__STDC__ || __cplusplus || c_plusplus || HAVE_STDLIB_H)
@@ -67,10 +83,9 @@ typedef long int32;
 #endif
 
 /* ==================== Machine-specific definitions =================== */
-
 #ifndef MOREPATH				 /* can override at compile time */
-#define MOREPATH "/usr/ucb/more" /* full path name */
-#define MORE "more"				 /* argv[0] */
+#define MOREPATH "/usr/bin/more" /* full path name to less */
+#define MORE "more" 		     /* argv[0] */
 #endif							 /* MOREPATH */
 
 #if __NeXT__
@@ -230,7 +245,7 @@ extern "C"
 
 #define FILE_VERSION 4	/* file format version */
 #define MAJOR_VERSION 2 /* program version     */
-#define MINOR_VERSION 10
+#define MINOR_VERSION 11
 
 #define MAXWORD 31	   /* maximum length of word indexed */
 #define MAXSTRING 4095 /* maximum length of line handled */
@@ -260,6 +275,7 @@ typedef int32 Off_t;				  /* .bix file offsets */
 /* characters which cannot appear in keywords or abbreviations */
 #define NONKEYCHARS ",\n\t \"#%'()={}" /* See LaTeX book, p.143 */
 
+/* GNU readline */
 #ifdef USE_READLINE
 #include <readline/readline.h>
 #include <readline/history.h>
