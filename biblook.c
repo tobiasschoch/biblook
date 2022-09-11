@@ -784,7 +784,8 @@ static void History_write(char *filename)
 #endif
         fclose(ofp);
     if (filename) {
-        (void)printf("\tHistory written in \"%s\"\n", filename);
+        (void)printf(COL_OUT "\tHistory written in \'%s\'" COL_RESET"\n",
+            filename);
         return;
     }
 
