@@ -22,7 +22,7 @@
 F_MAX_RES 	=
 
 # We use less and thus overrule MOREPATH and MORE (fallback is more; see
-# bibtool.h
+# biblook.h
 F_MORE		= -DMOREPATH=\"/usr/bin/less\" -DMORE=\"less\"
 
 # We use GNU readline (otherwise leave F_READLINE = empty, i.e., F_READLINE =
@@ -34,7 +34,7 @@ LDFLAGS		= -L/usr/lib/ -I/usr/include/readline
 # We use color output
 F_COLOR		= -DWITH_COLOR
 
-# We have malloc (see bibtool.h)
+# We have malloc (see biblook.h)
 F_HEADER	= -DHAVE_MALLOC_H
 
 # All flags
