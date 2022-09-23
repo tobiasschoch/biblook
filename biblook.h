@@ -32,12 +32,20 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define COL_OUT     "\x1B[36m"  /* output: cyan */
 #define COL_IN      "\x1B[32m"  /* input: green */
 #define COL_RESET   "\x1B[0m"   /* reset color */
+#define FONT_ITALIC "\e[3m"
+#define FONT_BOLD   "\e[1m"
+#define FONT_UNDER  "\e[4m"
+#define FONT_RESET  "\e[0m"
 #else
 #define COL_WARN    ""
 #define COL_ERR     ""
 #define COL_OUT     ""
 #define COL_IN      ""
 #define COL_RESET   ""
+#define FONT_ITALIC ""
+#define FONT_BOLD   ""
+#define FONT_UNDER  ""
+#define FONT_RESET  ""
 #endif
 
 #include <stdio.h>

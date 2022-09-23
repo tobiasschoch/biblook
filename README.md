@@ -10,7 +10,7 @@
 
 `biblook` and `bibindex` were written by Jeff Erickson with numerous additions and bug fixes by Nelson Beebe, Sariel Har-Peled, Bill Jones, Erik Schoenfelder, and Rafael Laboissiere. The programs are in the public domain. Rafael Laboissiere licensed the code under GNU General Public License (April 5, 2000; see [Link](https://www.cs.usask.ca/ftp/pub/geometry/geombib/bibtools/)).
 
-In version 2.11, I fixed some compiler warnings, added color to the output on the console (see flag `WITH_COLOR`), and added a `Makefile` for `gcc` and a POSIX-compliant environment. The original `Makefile` has been renamed to `Makefile_original`.
+In version 2.11, I fixed some compiler warnings, added color to the output on the console (see flag `WITH_COLOR`), added the command `t[able]` for a table like display, and added a `Makefile` for `gcc` and a POSIX-compliant environment. The original `Makefile` has been renamed to `Makefile_original`.
 
 ### Community guidelines
 

@@ -58,6 +58,10 @@ be used in place of `or'.
 Display the results of the previous search.
 .PP
 .TP
+.B "t[able]"
+Tabulate the results of the previous search.
+.PP
+.TP
 .B "s[ave] [<filename>]"
 Save the results of the previous results into the specified
 file.  If <filename> is omitted, the previous save file is
@@ -95,6 +99,7 @@ bibclean(1), bibindex(1), bibtex(1), latex(1), tex(1)
 Jeff Erickson <jeffe@cs.duke.edu>, Bill Jones <jones@cs.usask.ca>,
 and Rafael Laboissiere <rafael@laboissiere.net> with significant
 contributions from Nelson Beebe, Sariel Har-Peled, and Erik Schoenfelder.
+Tobias Schoch added the table functionality.
 .PP
 The most current version of biblook and bibindex is archived at the URL
 "https://github.com/tobiasschoch/biblook".

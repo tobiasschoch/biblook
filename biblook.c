@@ -213,6 +213,7 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
            variable len (of type Index_t) in function FindWord because
            it is not used.
         2. Added color to console output
+        3. Added 'table' command, which is a table like display
 \* ================================================================= */
 
 #include "biblook.h"
@@ -928,6 +929,7 @@ static void History_swallow_last(void)
 }
 
 #endif /* ifnedf USE_READLINE */
+
 
 /* ============================== CACHE ============================ *\
 
@@ -1730,13 +1732,318 @@ void PrintEntry(int entry, FILE *ofp)
     putc('\n', ofp);
 }
 
+/* ======================== TABLE OUTPUT =========================== */
+#define MAX_CHAR_ARRAY 65536
+
 /* ----------------------------------------------------------------- *\
-|  void PrintResults(char *filename)
+|  Put/ paste string to stream
+\* ----------------------------------------------------------------- */
+void put_stream(const char string[], FILE *stream)
+{
+    int i, length;
+
+    length = strlen(string);
+    for (i = 0; i < length; i++)
+        putc(string[i], stream);
+}
+
+/* ----------------------------------------------------------------- *\
+|  Is space
+\* ----------------------------------------------------------------- */
+int is_space(int c)
+{
+	return (c == '\t' || c == '\n' || c == '\v' || c == '\f' ||
+        c == '\r' || c == ' ' ? 1 : 0);
+}
+
+/* ----------------------------------------------------------------- *\
+|  Trim white space from a string (on both ends)
+\* ----------------------------------------------------------------- */
+void trim(char *str)
+{
+    int i;
+    int begin = 0;
+    int end = strlen(str) - 1;
+
+    while (is_space((unsigned char) str[begin]))
+        begin++;
+
+    while ((end >= begin) && is_space((unsigned char) str[end]))
+        end--;
+
+    // Shift all characters back to the start of the string array.
+    for (i = begin; i <= end; i++)
+        str[i - begin] = str[i];
+
+    str[i - begin] = '\0'; // Null terminate string.
+}
+
+/* ----------------------------------------------------------------- *\
+#  shorten array for 80-column length ouput
+\* ----------------------------------------------------------------- */
+void shorten_string(char string[], int at)
+{
+    if (strlen(string) > at) {
+        string[at - 4] = ' ';
+        string[at - 3] = '.';
+        string[at - 2] = '.';
+        string[at - 1] = '.';
+        string[at] = '\0';
+    }
+}
+
+/* ----------------------------------------------------------------- *\
+|  Extract a substring, which is delimited by the two characters from
+|  and to
+\* ----------------------------------------------------------------- */
+void extract(char source[], char sub[], int start, int end, int size)
+{
+    int i, j, from, to, length;
+    char *ptr;
+
+    /* determine positions: from and to */
+    length = strlen(source);
+    ptr = strchr(source, start);        /* determine start */
+    if (ptr) {
+        from = ptr - source + 1;
+        ptr = strchr(ptr + 1, end);     /* determine end */
+        if (ptr) {
+            to = ptr - source - 1;
+            if (to - from > size - 1)
+                to = from + size - 1;
+        } else {
+            to = from + size - 1;
+        }
+        if (to > length)
+            to = length;
+    } else {
+        sub = '\0';
+        return;
+    }
+
+    /* subset */
+    for (i = from, j = 0; i <= to; i++, j++)
+        sub[j] = source[i];
+    sub[j] = '\0';
+}
+
+/* ----------------------------------------------------------------- *\
+|  Extract a substring, which is delimited by quotes (escaped char
+|  \" are accounted for)
+\* ----------------------------------------------------------------- */
+void extract_quotes(char source[], char sub[], int size)
+{
+    int i, j, from, to, max_length;
+    char *ptr;
+
+    max_length = strlen(source);
+
+    /* determine begin of string */
+    ptr = strchr(source, '"');
+    if (ptr) {
+        from = ptr - source + 1;
+
+        /* determine end string */
+        ptr = strchr(ptr + 1, '"');
+        if (!ptr)
+            to = from + size - 1;
+
+         /* treat escape characters */
+        while (ptr && (ptr - source) < max_length) {
+            if ((ptr - 1)[0] == '\\') {
+                ptr = strchr(ptr + 1, '"');
+                continue;
+            }
+            to = ptr - source - 1;
+            break;
+        }
+
+        /* enforce range boundaries */
+        if (to - from > size - 1)
+            to = from + size - 1;
+        if (to > max_length)
+            to = max_length;
+    } else {
+        sub = '\0';
+        return;
+    }
+
+    /* subset */
+    for (i = from, j = 0; i <= to; i++, j++)
+        sub[j] = source[i];
+    sub[j] = '\0';
+}
+
+/* ----------------------------------------------------------------- *\
+| read in an entire BibTeX entry
+\* ----------------------------------------------------------------- */
+void get_entry(char entry[], FILE *stream, int size)
+{
+    int i = 0, braces = 0, quotes = 0;
+    char ch;
+
+    ch = safegetc(stream);
+    while (ch != '@')                       /* ignore char before @ */
+        ch = safegetc(stream);
+
+    while ((ch != '{') && (ch != '(')) {
+        entry[i] = ch;
+        ch = safegetc(stream);
+        i++;
+    }
+
+    braces = quotes = 0;
+    entry[i] = ch;
+    i++;
+    ch = safegetc(stream);
+
+    /* determine end of entry by closing brace */
+    while (braces || quotes || (ch != '}' && ch != ')')) {
+        if (ch == '{')
+            braces++;
+        else if (ch == '}')
+            braces--;
+        else if ((ch == '"') && !braces)
+            quotes = !quotes;
+        entry[i] = ch;
+        ch = safegetc(stream);
+        i++;
+        if (i > size - 2)
+            break;
+    }
+    entry[i] = '}';
+    entry[i + 1] = '\0';
+    trim(entry);                        /* trim white spaces */
+}
+
+/* ----------------------------------------------------------------- *\
+|  remove repeated spaces, newlines etc. within a string
+\* ----------------------------------------------------------------- */
+void clean_entry(char entry[])
+{
+    int i = 0, j = 0, space = 0;
+    char ch;
+    char out[MAX_CHAR_ARRAY];
+
+    while (i < strlen(entry)) {
+        ch = entry[i];
+        if (is_space(ch)) {
+            if (!space) {
+                out[j] = ' ';
+                j++;
+            }
+            space = 1;
+        } else {
+            out[j] = ch;
+            space = 0;
+            j++;
+        }
+        i++;
+    }
+    strncpy(entry, out, MAX_CHAR_ARRAY);
+}
+
+/* ----------------------------------------------------------------- *\
+|  Tabulate key, authors and title
+\* ----------------------------------------------------------------- */
+void TableEntry(int init, FILE *ofp)
+{
+    char entry[MAX_CHAR_ARRAY];
+    char label[256], author[1024], title[256], journal[256], type[256],
+         year[256] = "s.a.";
+    char *ptr;
+
+    if (init >= (int)numoffsets)       /* extra bits might be set */
+        return;
+
+    if (fseek(bibfp, offsets[init], 0))
+        die("Index file is corrupt.", "");
+
+    get_entry(entry, bibfp, MAX_CHAR_ARRAY);
+    clean_entry(entry);
+    putc('\n', ofp);
+
+    /* extract fields from BibTeX entry */
+    extract(entry, type, '@', '{', 256);
+    trim(type);
+
+    extract(entry, label, '{', ',', 256);
+    trim(label);
+
+    ptr = strstr(entry, "author");
+    if (ptr) {
+        extract_quotes(ptr, author, 1024);
+        trim(author);
+        shorten_string(author, 72);
+    }
+
+    ptr = strstr(entry, "year");
+    if (ptr) {
+        extract_quotes(ptr, year, 256);
+        trim(year);
+    }
+
+    ptr = strstr(entry, "journal");
+    if (ptr) {
+        extract_quotes(ptr, journal, 256);
+        trim(journal);
+    }
+
+    ptr = strstr(entry, "title");
+    if (ptr) {
+        extract_quotes(ptr, title, 256);
+        trim(title);
+        shorten_string(title, 72);
+    }
+
+    /* output */
+#ifdef WITH_COLOR
+    put_stream(COL_OUT, ofp);
+    put_stream(label, ofp);
+    put_stream(COL_RESET, ofp);
+#else
+    put_stream(label, ofp);
+#endif
+
+    put_stream("\n   ", ofp);
+    if (strstr(type, "Article")) {
+#ifdef WITH_COLOR
+        put_stream(FONT_UNDER, ofp);
+        put_stream(journal, ofp);
+        put_stream(FONT_RESET, ofp);
+#else
+        put_stream(journal, ofp);
+#endif
+
+    } else {
+        put_stream(type, ofp);
+    }
+
+    put_stream(", ", ofp);
+    put_stream(year, ofp);
+
+    put_stream("\n   ", ofp);
+    put_stream(author, ofp);
+    put_stream("\n   ", ofp);
+
+#ifdef WITH_COLOR
+    put_stream(FONT_ITALIC, ofp);
+    put_stream(title, ofp);
+    put_stream(FONT_RESET, ofp);
+#else
+    put_stream(title, ofp);
+#endif
+
+    putc('\n', ofp);
+}
+
+/* ----------------------------------------------------------------- *\
+|  void PrintResults(char *filename, int type)
 |
 |  Print the current search results into the given file.  If the
 |  filename is NULL, pipe the output through $PAGER.
 \* ----------------------------------------------------------------- */
-void PrintResults(char *filename)
+void PrintResults(char *filename, int type)
 {
     int numresults;
     FILE *ofp;
@@ -1786,7 +2093,10 @@ void PrintResults(char *filename)
                 MAJOR_VERSION, MINOR_VERSION, ctime(&now));
         }
 
-        DoForSet(results, (void (*)(int, void *))PrintEntry, (void *)ofp);
+        if (type == 0)      /* display */
+            DoForSet(results, (void (*)(int, void *))PrintEntry, (void *)ofp);
+        else                /* table */
+            DoForSet(results, (void (*)(int, void *))TableEntry, (void *)ofp);
 
 #ifdef __SYMBIAN32__
         if (filename)
@@ -1882,7 +2192,8 @@ typedef enum {
     T_Semi,
     T_Return,
     T_Help,
-    T_Copyright
+    T_Copyright,
+    T_Table
 #ifndef USE_READLINE
     ,
     T_History,
@@ -1924,6 +2235,7 @@ typedef struct {
 static const TableEntryToken tokens_array[] =
     {{"find", T_Find, FALSE},
      {"display", T_Display, FALSE},
+     {"table", T_Table, FALSE},
      {"help", T_Help, FALSE},
      {"save", T_Save, FALSE},
      {"whatis", T_Whatis, FALSE},
@@ -2063,6 +2375,8 @@ Token GetToken(char *tokenstr)
             return T_Find;
         else if (!strncmp(tokenstr, "display", tlen))
             return T_Display;
+        else if (!strncmp(tokenstr, "table", tlen))
+            return T_Table;
         else if (!strncmp(tokenstr, "help", tlen))
             return T_Help;
         else if (!strncmp(tokenstr, "save", tlen))
@@ -2163,6 +2477,7 @@ static const char *const shorthelplines[] = {
         "and  <field> <words>	Narrow search",
         "or   <field> <words>	Widen search",
         "display			Display search results",
+        "table                   Tabulate data",
         "save <file>		Save search results to <file>",
         "whatis <abbrev>		Find and display an abbreviation",
 #ifndef USE_READLINE
@@ -2215,6 +2530,9 @@ static const char *const longhelplines[] = {
         "",
         "d[isplay]",
         "     Display the results of the previous search.",
+        "",
+        "t[table]",
+        "     Tabulate the results of the previous search.",
         "",
         "s[ave] [<filename>]",
         "     Save the results of the previous results into the",
@@ -2322,6 +2640,7 @@ typedef enum {
     WhatisA,                            /* "whatis <abbrev>" */
     Help,                               /* "help" */
     Copyright,                          /* "Copyright" */
+    Table,                              /* tabulate */
 #ifndef USE_READLINE
     History,                            /* "history" */
     WriteHistory,                       /* "writehistory" */
@@ -2396,6 +2715,9 @@ void Lookup(const char *defsave, const char *def_history_save)
                 break;
             case T_Display:
                 state = Display;
+                break;
+            case T_Table:
+                state = Table;
                 break;
             case T_Save:
                 state = Save;
@@ -2534,7 +2856,18 @@ void Lookup(const char *defsave, const char *def_history_save)
             if ((thetoken == T_Semi) || (thetoken == T_Return)) {
                 last_state = state;
                 state = Wait;
-                PrintResults(NULL);
+                PrintResults(NULL, 0);
+            } else {
+                state = Error;
+                CmdError();
+            }
+            break;
+
+        case Table:
+            if ((thetoken == T_Semi) || (thetoken == T_Return)) {
+                last_state = state;
+                state = Wait;
+                PrintResults(NULL, 1);
             } else {
                 state = Error;
                 CmdError();
@@ -2608,7 +2941,7 @@ void Lookup(const char *defsave, const char *def_history_save)
                 strcpy(savestr, tokenstr);
             } else if ((thetoken == T_Semi) || (thetoken == T_Return)) {
                 state = Wait;
-                PrintResults(savestr);
+                PrintResults(savestr, 0);
             } else {
                 state = Error;
                 CmdError();
@@ -2619,7 +2952,7 @@ void Lookup(const char *defsave, const char *def_history_save)
             if ((thetoken == T_Semi) || (thetoken == T_Return)) {
                 last_state = state;
                 state = Wait;
-                PrintResults(savestr);
+                PrintResults(savestr, 0);
             } else {
                 state = Error;
                 CmdError();
